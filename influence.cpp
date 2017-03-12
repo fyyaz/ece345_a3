@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <fstream>
 #include <vector>
 #include <queue>
@@ -10,7 +11,7 @@
 using namespace std;
 
 //from sample graph file info
-#define MAX_VERTEX 1000
+#define MAX_VERTEX 10000
 #define MAX_EDGE 20000
 
 int main(int argc, char **argv)
@@ -36,7 +37,12 @@ int main(int argc, char **argv)
     }
     
     ifstream in(argv[1]);
-    int T = atoi(argv[2]);
+
+    stringstream ss(argv[2]);
+
+    double T;
+
+    ss >> T;
 
     //get inputs
     int max_vert_no = 0;//holds max vertex, dont want to iterate through 0s
@@ -113,7 +119,7 @@ int main(int argc, char **argv)
         }
     }
 
-    cout << "top 1: " << top_node << endl;
+    cout << "TOP-1 INFLUENCER: " << top_node << ", SPREAD:  " << max_spread << endl;
 
     //delete the adjacency matrix
     for (int i = 0;i < MAX_VERTEX;i++)
