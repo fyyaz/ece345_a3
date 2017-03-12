@@ -24,6 +24,7 @@ int main(int argc, char **argv)
     double **dist = new double *[MAX_VERTEX];
     for (int i = 0;i < MAX_VERTEX;i++)
     {
+	dist[i] = new double[MAX_VERTEX];
         adj_matrix[i] = new double[MAX_VERTEX];
         for (int j = 0;j < MAX_VERTEX;j++)
         {
@@ -43,8 +44,6 @@ int main(int argc, char **argv)
     {
         int u, v;
         double weight;
-        assert(u >= 0 && u <= MAX_VERTEX);
-        assert(v >= 0 && v <= MAX_VERTEX);
 
         in >> u >> v >> weight;
 
@@ -54,6 +53,9 @@ int main(int argc, char **argv)
             max_vert_no = u;
         if (v > max_vert_no)
             max_vert_no = v;
+
+        assert(u >= 0 && u <= MAX_VERTEX);
+        assert(v >= 0 && v <= MAX_VERTEX);
     }
 
     /*
