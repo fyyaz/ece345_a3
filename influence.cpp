@@ -13,6 +13,11 @@ using namespace std;
 
 #define MAX_NODES 30000
 
+#define DO_ECE345_REPORT
+
+//file to generate graph for report
+#define LOG_FILE "A3_TIME.log"
+
 bool influenced[MAX_NODES];
 double d[MAX_NODES];
 
@@ -34,8 +39,10 @@ struct compare
 
 void dijkstra(const vector<list<pair<int, double> > > &adj_list, int source_node, double T)
 {
-    init_dijkstra();
+    init_dijkstra();//INITIALIZE SINGLE SOURCE
     d[source_node] = 0;
+
+    //use this so that complexity is O((E+V)*logV)
     priority_queue <pair<int, double>, vector<pair<int, double> >, compare> pq;
 
     pq.push(make_pair(source_node, d[source_node]));
@@ -46,6 +53,9 @@ void dijkstra(const vector<list<pair<int, double> > > &adj_list, int source_node
         double u_dist = pq.top().second;
         pq.pop();
 
+        /*
+            if the 
+         */
         if (u_dist >= T)
             continue;
 
@@ -53,8 +63,6 @@ void dijkstra(const vector<list<pair<int, double> > > &adj_list, int source_node
         {
             int v = i->first;
             double weight = i->second;
-
-            //check if d[v] == T if so then we cant visit this nodes neighbours
 
             //relaxation
             if (d[v] > d[u] + weight)
@@ -80,8 +88,6 @@ int find_top_influencer(const vector<list<pair<int, double> > > &adj_list, doubl
         if (adj_list[source_node].empty())
             continue;
 
-        //INITIALIZE SINGLE SOURCE
-        
         dijkstra(adj_list, source_node, T);
 
         //now look at spread
@@ -210,17 +216,25 @@ int main(int argc, char **argv)
     int top_influencer = find_top_influencer(adj_list, T);
     //stop timing top influence here
     clock_t end = clock();
-    double t = ((double)(end - begin))/CLOCKS_PER_SEC;
+    double top1_time = ((double)(end - begin))/CLOCKS_PER_SEC;
 
-    cout << "TIME: " << t <<" sec"<<endl;
+    cout << "TIME: " << top1_time <<" sec"<<endl;
 
     //start timing for top 2 influencer here
     begin = clock();
     find_top2_influencer(adj_list, T, top_influencer);
     end = clock();
-    t = ((double)(end - begin))/CLOCKS_PER_SEC;
+    double top2_time = ((double)(end - begin))/CLOCKS_PER_SEC;
 
-    cout<<"TIME: "<<t<<" sec"<<endl;
+    cout<<"TIME: "<<top2_time<<" sec"<<endl;
+
+#ifdef DO_ECE345_REPORT
+    //write the total time to file for the report
+    double total_time = top2_time + top1_time;
+    ofstream of(LOG_FILE, ofstream::app);
+    of << total_time << endl;
+    of.close();
+#endif
 
     return 0;
 }
