@@ -8,6 +8,7 @@
 #include <limits>
 #include <cassert>
 #include <cstdlib>
+#include <ctime>
 using namespace std;
 
 #define MAX_NODES 30000
@@ -42,7 +43,11 @@ void dijkstra(const vector<list<pair<int, double> > > &adj_list, int source_node
     while (!pq.empty())
     {
         int u = pq.top().first;
+        double u_dist = pq.top().second;
         pq.pop();
+
+        if (u_dist >= T)
+            continue;
 
         for (auto i = adj_list[u].begin();i!=adj_list[u].end();i++)
         {
@@ -69,7 +74,7 @@ int find_top_influencer(const vector<list<pair<int, double> > > &adj_list, doubl
 {
     int max_spread  = 0;
     int top_influencer = 0;
-    double time = 0;
+
     for (int source_node = 0;source_node<MAX_NODES;source_node++)
     {
         if (adj_list[source_node].empty())
@@ -98,7 +103,7 @@ int find_top_influencer(const vector<list<pair<int, double> > > &adj_list, doubl
             top_influencer = source_node;
     }
 
-    cout << "TOP-1 INFLUENCER: "<<top_influencer<<", SPREAD: "<<max_spread<<", TIME: "<<time<<"(us)"<<endl;
+    cout << "TOP-1 INFLUENCER: "<<top_influencer<<", SPREAD: "<<max_spread<<", ";
     return top_influencer;
 }
 void find_top2_influencer(const vector<list<pair<int, double> > > &adj_list, double T, int top_influencer)
@@ -114,7 +119,6 @@ void find_top2_influencer(const vector<list<pair<int, double> > > &adj_list, dou
 
     int top2_influencer = 0;
     int max_spread  = 0;
-    double time = 0;
     for (int source_node = 0;source_node<MAX_NODES;source_node++)
     {
         if (source_node == top_influencer)
@@ -144,7 +148,7 @@ void find_top2_influencer(const vector<list<pair<int, double> > > &adj_list, dou
     }
 
 
-    cout << "TOP-2 INFLUENCER: "<<top_influencer<<", MARGINAL SPREAD: "<<max_spread<<", TIME: "<<time<<"(us)"<<endl;
+    cout << "TOP-2 INFLUENCER: "<<top_influencer<<", MARGINAL SPREAD: "<<max_spread<<", ";
 
 }
 int main(int argc, char **argv)
@@ -168,6 +172,8 @@ int main(int argc, char **argv)
 
     ss >> T;
 
+    //creating the graph, start timing for the top influencer here
+    clock_t begin = clock();
     //get inputs
     int max_vert_no = 0;//holds max vertex, dont want to iterate through 0s
     while (!in.eof())
@@ -195,14 +201,26 @@ int main(int argc, char **argv)
        IC model calculations
      */
 
-    //nothing influenced yet
+    //nothing influenced yet, initializes the influenced flag of each node
     for (int i = 0;i<MAX_NODES;i++)
     {
         influenced[i] = false;
     }
 
-    //run dijkstra on every node to get the top 1 influencer
-    //run dijkstra to find top 1 influencer
     int top_influencer = find_top_influencer(adj_list, T);
+    //stop timing top influence here
+    clock_t end = clock();
+    double t = ((double)(end - begin))/CLOCKS_PER_SEC;
+
+    cout << "TIME: " << t <<" sec"<<endl;
+
+    //start timing for top 2 influencer here
+    begin = clock();
     find_top2_influencer(adj_list, T, top_influencer);
+    end = clock();
+    t = ((double)(end - begin))/CLOCKS_PER_SEC;
+
+    cout<<"TIME: "<<t<<" sec"<<endl;
+
+    return 0;
 }
