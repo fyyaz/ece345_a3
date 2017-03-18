@@ -7,13 +7,146 @@
 #include <cstdlib>
 #include <limits>
 #include <cassert>
-
+#include <cstdlib>
 using namespace std;
 
-//from sample graph file info
-#define MAX_VERTEX 10000
-#define MAX_EDGE 20000
+#define MAX_NODES 30000
 
+bool influenced[MAX_NODES];
+double d[MAX_NODES];
+
+void init_dijkstra()
+{
+    for (int i =  0;i<MAX_NODES;i++)
+    {
+        d[i] = numeric_limits<double>::max();
+    }
+}
+//comparator to compare by distance
+struct compare
+{
+    bool operator()(const pair<int, double> &l, const pair<int, double> &r)
+    {
+        return l.second > r.second;
+    }
+};
+
+void dijkstra(const vector<list<pair<int, double> > > &adj_list, int source_node, double T)
+{
+    init_dijkstra();
+    d[source_node] = 0;
+    priority_queue <pair<int, double>, vector<pair<int, double> >, compare> pq;
+
+    pq.push(make_pair(source_node, d[source_node]));
+
+    while (!pq.empty())
+    {
+        int u = pq.top().first;
+        pq.pop();
+
+        for (auto i = adj_list[u].begin();i!=adj_list[u].end();i++)
+        {
+            int v = i->first;
+            double weight = i->second;
+
+            //check if d[v] == T if so then we cant visit this nodes neighbours
+
+            //relaxation
+            if (d[v] > d[u] + weight)
+            {
+                d[v] = d[u] + weight;
+
+                //if (d[v] < T)
+                    pq.push(make_pair(v, d[v]));
+            }
+        }
+    }
+
+}
+
+//returns the top influencer
+int find_top_influencer(const vector<list<pair<int, double> > > &adj_list, double T)
+{
+    int max_spread  = 0;
+    int top_influencer = 0;
+    double time = 0;
+    for (int source_node = 0;source_node<MAX_NODES;source_node++)
+    {
+        if (adj_list[source_node].empty())
+            continue;
+
+        //INITIALIZE SINGLE SOURCE
+        
+        dijkstra(adj_list, source_node, T);
+
+        //now look at spread
+        int spread = 0;
+        for (int i = 0;i<MAX_NODES;i++)
+        {
+            if (d[i] <= T)
+                spread++;
+        }
+
+        if (spread > max_spread)
+        {
+            max_spread = spread;
+            top_influencer = source_node;
+        }
+
+        //if the spreads are equal (tie) randomly choose one as top influencer
+        if (spread == max_spread && rand()%2 == 0)
+            top_influencer = source_node;
+    }
+
+    cout << "TOP-1 INFLUENCER: "<<top_influencer<<", SPREAD: "<<max_spread<<", TIME: "<<time<<"(us)"<<endl;
+    return top_influencer;
+}
+void find_top2_influencer(const vector<list<pair<int, double> > > &adj_list, double T, int top_influencer)
+{
+    //run dijkstra on top 1 influencer and mark all influenced nodes influenced
+    dijkstra(adj_list, top_influencer, T);
+    //mark all nodes influened by the top 1 as influenced
+    for (int i = 0;i<MAX_NODES;i++)
+    {
+        if (d[i] <= T)
+            influenced[i] = true;
+    }
+
+    int top2_influencer = 0;
+    int max_spread  = 0;
+    double time = 0;
+    for (int source_node = 0;source_node<MAX_NODES;source_node++)
+    {
+        if (source_node == top_influencer)
+            continue;
+        if (adj_list[source_node].empty())
+            continue;
+        
+        dijkstra(adj_list, source_node, T);
+
+        //now look at spread
+        int spread = 0;
+        for (int i = 0;i<MAX_NODES;i++)
+        {
+            if (d[i] <= T && !influenced[i])
+                spread++;
+        }
+
+        if (spread > max_spread)
+        {
+            max_spread = spread;
+            top_influencer = source_node;
+        }
+
+        //if the spreads are equal (tie) randomly choose one as top influencer
+        if (spread == max_spread && rand()%2 == 0)
+            top2_influencer = source_node;
+    }
+
+
+    cout << "TOP-2 INFLUENCER: "<<top_influencer<<", MARGINAL SPREAD: "<<max_spread<<", TIME: "<<time<<"(us)"<<endl;
+
+}
 int main(int argc, char **argv)
 {
     if (argc != 3)
@@ -21,21 +154,12 @@ int main(int argc, char **argv)
         cout << "usage: influence <graph file> <deadline constraint (T)>\n";
         return -1;
     }
-    double **adj_matrix = new double *[MAX_VERTEX];
-    double **dist = new double *[MAX_VERTEX];
-    for (int i = 0;i < MAX_VERTEX;i++)
-    {
-	dist[i] = new double[MAX_VERTEX];
-        adj_matrix[i] = new double[MAX_VERTEX];
-        for (int j = 0;j < MAX_VERTEX;j++)
-        {
-            if (i == j) //to get from node to itself is 0 cost
-                adj_matrix[i][j] = 0;
-            else //initializes all distances to infinity
-                adj_matrix[i][j] = numeric_limits<double>::max();
-        }
-    }
-    
+
+    srand(time(NULL));
+
+    //adjacency list representation
+    vector<list <pair<int, double> > > adj_list(MAX_NODES);
+
     ifstream in(argv[1]);
 
     stringstream ss(argv[2]);
@@ -48,83 +172,37 @@ int main(int argc, char **argv)
     int max_vert_no = 0;//holds max vertex, dont want to iterate through 0s
     while (!in.eof())
     {
+        string buf;
+        getline(in, buf);
+        istringstream is(buf);
         int u, v;
         double weight;
 
-        in >> u >> v >> weight;
+        is >> u >> v >> weight;
 
-        adj_matrix[u][v] = weight;
+        adj_list[u].push_back(make_pair(v, weight));
 
         if (u > max_vert_no)
             max_vert_no = u;
         if (v > max_vert_no)
             max_vert_no = v;
 
-        assert(u >= 0 && u <= MAX_VERTEX);
-        assert(v >= 0 && v <= MAX_VERTEX);
+        assert(u >= 0);
+        assert(v >= 0);
     }
 
     /*
        IC model calculations
-       Top 1 influencer: 
-                run floyd warshall O(|V|^3)
-                find max spread node O(|V|)
-       Top 2 influencer:
-                same idea
-       Thinking to use floyd warshall since we need to calculate all pairs 
-       shortest paths for this while 
-                djikstra will take |V|*O(|E| + |V|log|V|)
-       since graph can become very dense |V||E| > |V|^3 
      */
 
-    //floyd warshall top1 
-    for (int i = 0;i < max_vert_no;i++)
+    //nothing influenced yet
+    for (int i = 0;i<MAX_NODES;i++)
     {
-        dist[i][i] = 0;//not needed really
-        for (int j = 0;j < max_vert_no;j++)
-        {
-            dist[i][j] = adj_matrix[i][j];
-        }
-    }
-    for (int k = 0;k < max_vert_no;k++)
-    {
-        for (int i = 0;i < max_vert_no;i++)
-        {
-            for (int j = 0;j < max_vert_no;j++)
-            {
-                if (dist[i][j] > dist[i][k] + dist[k][j])
-                    dist[i][j] = dist[i][k] + dist[k][j];
-            }
-        }
+        influenced[i] = false;
     }
 
-    //find top 1 
-    int top_node = 0;
-    int max_spread = 0;
-
-    for (int i = 0;i < max_vert_no;i++)
-    {
-        int spread = 0;
-        for (int j = 0;j < max_vert_no;j++)
-        {
-            //little sigma(i) = size{v belongs to V:dist[u][v]<=T}
-            if (dist[i][j] <= T)
-                spread++;
-        }
-
-        if (spread > max_spread)
-        {
-            max_spread = spread;
-            top_node = i;
-        }
-    }
-
-    cout << "TOP-1 INFLUENCER: " << top_node << ", SPREAD:  " << max_spread << endl;
-
-    //delete the adjacency matrix
-    for (int i = 0;i < MAX_VERTEX;i++)
-        delete [] adj_matrix[i];
-
-    delete [] adj_matrix;
-    return 0;
+    //run dijkstra on every node to get the top 1 influencer
+    //run dijkstra to find top 1 influencer
+    int top_influencer = find_top_influencer(adj_list, T);
+    find_top2_influencer(adj_list, T, top_influencer);
 }
