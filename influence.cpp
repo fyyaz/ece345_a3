@@ -56,7 +56,7 @@ void dijkstra(const vector<list<pair<int, double> > > &adj_list, int source_node
             {
                 d[v] = d[u] + weight;
 
-                //if (d[v] < T)
+                if (d[v] < T)
                     pq.push(make_pair(v, d[v]));
             }
         }
