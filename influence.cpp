@@ -99,7 +99,7 @@ int find_top_influencer(const vector<list<pair<int, double> > > &adj_list, doubl
         }
 
         //if the spreads are equal (tie) randomly choose one as top influencer
-        if (spread == max_spread && rand()%2 == 0)
+        else if (spread == max_spread && rand()%2 == 0)
             top_influencer = source_node;
     }
 
@@ -139,16 +139,16 @@ void find_top2_influencer(const vector<list<pair<int, double> > > &adj_list, dou
         if (spread > max_spread)
         {
             max_spread = spread;
-            top_influencer = source_node;
+            top2_influencer = source_node;
         }
 
         //if the spreads are equal (tie) randomly choose one as top influencer
-        if (spread == max_spread && rand()%2 == 0)
+        else if (spread == max_spread && rand()%2 == 0)
             top2_influencer = source_node;
     }
 
 
-    cout << "TOP-2 INFLUENCER: "<<top_influencer<<", MARGINAL SPREAD: "<<max_spread<<", ";
+    cout << "TOP-2 INFLUENCER: "<<top2_influencer<<", MARGINAL SPREAD: "<<max_spread<<", ";
 
 }
 int main(int argc, char **argv)
